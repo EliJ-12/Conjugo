@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conju-Go - Aprende Francés Jugando</title>
+    <title>Conju-Go - Juego de Conjugación Francesa</title>
     <style>
         * {
             margin: 0;
@@ -66,13 +66,13 @@
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
 
-        .mode-btn.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
         .game-area {
             display: none;
             animation: fadeIn 0.5s;
+        }
+
+        .game-area.active {
+            display: block;
         }
 
         @keyframes fadeIn {
@@ -143,22 +143,22 @@
             color: #333;
         }
 
-        .answer-btn:hover {
+        .answer-btn:hover:not(:disabled) {
             background: #667eea;
             color: white;
             transform: scale(1.05);
         }
 
         .answer-btn.correct {
-            background: #4CAF50;
-            border-color: #4CAF50;
-            color: white;
+            background: #4CAF50 !important;
+            border-color: #4CAF50 !important;
+            color: white !important;
         }
 
         .answer-btn.incorrect {
-            background: #f44336;
-            border-color: #f44336;
-            color: white;
+            background: #f44336 !important;
+            border-color: #f44336 !important;
+            color: white !important;
         }
 
         .memory-grid {
@@ -179,7 +179,7 @@
             font-size: 1.2em;
             color: white;
             transition: transform 0.3s;
-            position: relative;
+            font-weight: bold;
         }
 
         .memory-card.flipped {
@@ -194,7 +194,7 @@
             cursor: default;
         }
 
-        .memory-card:hover:not(.matched) {
+        .memory-card:hover:not(.matched):not(.flipped) {
             transform: scale(1.05);
         }
 
@@ -240,11 +240,26 @@
             cursor: pointer;
             width: 100%;
             margin-top: 20px;
+            transition: all 0.3s;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
         }
 
         .kahoot-room {
@@ -261,22 +276,6 @@
             color: #667eea;
             text-align: center;
             letter-spacing: 5px;
-        }
-
-        .players-list {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        .player-item {
-            padding: 10px;
-            margin: 5px 0;
-            background: #f8f9fa;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
         }
 
         .leaderboard {
@@ -297,11 +296,6 @@
             font-size: 1.1em;
         }
 
-        .medal {
-            font-size: 1.5em;
-            margin-right: 10px;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -320,19 +314,19 @@
 <body>
     <div class="container">
         <h1>🇫🇷 Conju-Go</h1>
-        <p class="subtitle">Aprende francés jugando - 150 verbos esenciales</p>
+        <p class="subtitle">Aprende francés jugando - Verbos esenciales</p>
 
         <div class="mode-selector" id="modeSelector">
-            <button class="mode-btn" onclick="selectMode('solo')">
+            <button class="mode-btn" onclick="game.selectMode('solo')">
                 🎯 Modo Solitario
             </button>
-            <button class="mode-btn" onclick="selectMode('memory')">
+            <button class="mode-btn" onclick="game.selectMode('memory')">
                 🧠 Memory
             </button>
-            <button class="mode-btn" onclick="selectMode('timed')">
+            <button class="mode-btn" onclick="game.selectMode('timed')">
                 ⏱️ Contrarreloj
             </button>
-            <button class="mode-btn" onclick="selectMode('kahoot')">
+            <button class="mode-btn" onclick="game.selectMode('kahoot')">
                 👥 Modo Kahoot
             </button>
         </div>
@@ -341,352 +335,502 @@
     </div>
 
     <script>
-        const verbs = [
-            {es: "ser/estar", fr: "être", present: ["suis", "es", "est", "sommes", "êtes", "sont"], passe: ["été", "été", "été", "été", "été", "été"], imparfait: ["étais", "étais", "était", "étions", "étiez", "étaient"]},
-            {es: "tener", fr: "avoir", present: ["ai", "as", "a", "avons", "avez", "ont"], passe: ["eu", "eu", "eu", "eu", "eu", "eu"], imparfait: ["avais", "avais", "avait", "avions", "aviez", "avaient"]},
-            {es: "hacer", fr: "faire", present: ["fais", "fais", "fait", "faisons", "faites", "font"], passe: ["fait", "fait", "fait", "fait", "fait", "fait"], imparfait: ["faisais", "faisais", "faisait", "faisions", "faisiez", "faisaient"]},
-            {es: "poder", fr: "pouvoir", present: ["peux", "peux", "peut", "pouvons", "pouvez", "peuvent"], passe: ["pu", "pu", "pu", "pu", "pu", "pu"], imparfait: ["pouvais", "pouvais", "pouvait", "pouvions", "pouviez", "pouvaient"]},
-            {es: "decir", fr: "dire", present: ["dis", "dis", "dit", "disons", "dites", "disent"], passe: ["dit", "dit", "dit", "dit", "dit", "dit"], imparfait: ["disais", "disais", "disait", "disions", "disiez", "disaient"]},
-            {es: "ir", fr: "aller", present: ["vais", "vas", "va", "allons", "allez", "vont"], passe: ["allé", "allé", "allé", "allé", "allé", "allé"], imparfait: ["allais", "allais", "allait", "allions", "alliez", "allaient"]},
-            {es: "ver", fr: "voir", present: ["vois", "vois", "voit", "voyons", "voyez", "voient"], passe: ["vu", "vu", "vu", "vu", "vu", "vu"], imparfait: ["voyais", "voyais", "voyait", "voyions", "voyiez", "voyaient"]},
-            {es: "saber", fr: "savoir", present: ["sais", "sais", "sait", "savons", "savez", "savent"], passe: ["su", "su", "su", "su", "su", "su"], imparfait: ["savais", "savais", "savait", "savions", "saviez", "savaient"]},
-            {es: "querer", fr: "vouloir", present: ["veux", "veux", "veut", "voulons", "voulez", "veulent"], passe: ["voulu", "voulu", "voulu", "voulu", "voulu", "voulu"], imparfait: ["voulais", "voulais", "voulait", "voulions", "vouliez", "voulaient"]},
-            {es: "venir", fr: "venir", present: ["viens", "viens", "vient", "venons", "venez", "viennent"], passe: ["venu", "venu", "venu", "venu", "venu", "venu"], imparfait: ["venais", "venais", "venait", "venions", "veniez", "venaient"]},
-            {es: "tomar", fr: "prendre", present: ["prends", "prends", "prend", "prenons", "prenez", "prennent"], passe: ["pris", "pris", "pris", "pris", "pris", "pris"], imparfait: ["prenais", "prenais", "prenait", "prenions", "preniez", "prenaient"]},
-            {es: "dar", fr: "donner", present: ["donne", "donnes", "donne", "donnons", "donnez", "donnent"], passe: ["donné", "donné", "donné", "donné", "donné", "donné"], imparfait: ["donnais", "donnais", "donnait", "donnions", "donniez", "donnaient"]},
-            {es: "encontrar", fr: "trouver", present: ["trouve", "trouves", "trouve", "trouvons", "trouvez", "trouvent"], passe: ["trouvé", "trouvé", "trouvé", "trouvé", "trouvé", "trouvé"], imparfait: ["trouvais", "trouvais", "trouvait", "trouvions", "trouviez", "trouvaient"]},
-            {es: "pensar", fr: "penser", present: ["pense", "penses", "pense", "pensons", "pensez", "pensent"], passe: ["pensé", "pensé", "pensé", "pensé", "pensé", "pensé"], imparfait: ["pensais", "pensais", "pensait", "pensions", "pensiez", "pensaient"]},
-            {es: "hablar", fr: "parler", present: ["parle", "parles", "parle", "parlons", "parlez", "parlent"], passe: ["parlé", "parlé", "parlé", "parlé", "parlé", "parlé"], imparfait: ["parlais", "parlais", "parlait", "parlions", "parliez", "parlaient"]},
-            {es: "pasar", fr: "passer", present: ["passe", "passes", "passe", "passons", "passez", "passent"], passe: ["passé", "passé", "passé", "passé", "passé", "passé"], imparfait: ["passais", "passais", "passait", "passions", "passiez", "passaient"]},
-            {es: "mirar", fr: "regarder", present: ["regarde", "regardes", "regarde", "regardons", "regardez", "regardent"], passe: ["regardé", "regardé", "regardé", "regardé", "regardé", "regardé"], imparfait: ["regardais", "regardais", "regardait", "regardions", "regardiez", "regardaient"]},
-            {es: "llamar", fr: "appeler", present: ["appelle", "appelles", "appelle", "appelons", "appelez", "appellent"], passe: ["appelé", "appelé", "appelé", "appelé", "appelé", "appelé"], imparfait: ["appelais", "appelais", "appelait", "appelions", "appeliez", "appelaient"]},
-            {es: "dejar", fr: "laisser", present: ["laisse", "laisses", "laisse", "laissons", "laissez", "laissent"], passe: ["laissé", "laissé", "laissé", "laissé", "laissé", "laissé"], imparfait: ["laissais", "laissais", "laissait", "laissions", "laissiez", "laissaient"]},
-            {es: "trabajar", fr: "travailler", present: ["travaille", "travailles", "travaille", "travaillons", "travaillez", "travaillent"], passe: ["travaillé", "travaillé", "travaillé", "travaillé", "travaillé", "travaillé"], imparfait: ["travaillais", "travaillais", "travaillait", "travaillions", "travailliez", "travaillaient"]}
-        ];
-
-        const pronouns = ["je", "tu", "il/elle", "nous", "vous", "ils/elles"];
-        const tenseNames = {present: "Présent", passe: "Passé Composé", imparfait: "Imparfait"};
-        
-        let currentMode = null;
-        let score = 0;
-        let questions = 0;
-        let timer = null;
-        let timeLeft = 0;
-        let currentQuestion = null;
-        let memoryCards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
-
-        function selectMode(mode) {
-            currentMode = mode;
-            score = 0;
-            questions = 0;
-            const gameArea = document.getElementById('gameArea');
-            gameArea.style.display = 'block';
+        const game = {
+            verbs: [
+                {es: "ser/estar", fr: "être", present: ["suis", "es", "est", "sommes", "êtes", "sont"], passe: ["ai été", "as été", "a été", "avons été", "avez été", "ont été"], imparfait: ["étais", "étais", "était", "étions", "étiez", "étaient"]},
+                {es: "tener", fr: "avoir", present: ["ai", "as", "a", "avons", "avez", "ont"], passe: ["ai eu", "as eu", "a eu", "avons eu", "avez eu", "ont eu"], imparfait: ["avais", "avais", "avait", "avions", "aviez", "avaient"]},
+                {es: "hacer", fr: "faire", present: ["fais", "fais", "fait", "faisons", "faites", "font"], passe: ["ai fait", "as fait", "a fait", "avons fait", "avez fait", "ont fait"], imparfait: ["faisais", "faisais", "faisait", "faisions", "faisiez", "faisaient"]},
+                {es: "poder", fr: "pouvoir", present: ["peux", "peux", "peut", "pouvons", "pouvez", "peuvent"], passe: ["ai pu", "as pu", "a pu", "avons pu", "avez pu", "ont pu"], imparfait: ["pouvais", "pouvais", "pouvait", "pouvions", "pouviez", "pouvaient"]},
+                {es: "decir", fr: "dire", present: ["dis", "dis", "dit", "disons", "dites", "disent"], passe: ["ai dit", "as dit", "a dit", "avons dit", "avez dit", "ont dit"], imparfait: ["disais", "disais", "disait", "disions", "disiez", "disaient"]},
+                {es: "ir", fr: "aller", present: ["vais", "vas", "va", "allons", "allez", "vont"], passe: ["suis allé", "es allé", "est allé", "sommes allés", "êtes allés", "sont allés"], imparfait: ["allais", "allais", "allait", "allions", "alliez", "allaient"]},
+                {es: "ver", fr: "voir", present: ["vois", "vois", "voit", "voyons", "voyez", "voient"], passe: ["ai vu", "as vu", "a vu", "avons vu", "avez vu", "ont vu"], imparfait: ["voyais", "voyais", "voyait", "voyions", "voyiez", "voyaient"]},
+                {es: "saber", fr: "savoir", present: ["sais", "sais", "sait", "savons", "savez", "savent"], passe: ["ai su", "as su", "a su", "avons su", "avez su", "ont su"], imparfait: ["savais", "savais", "savait", "savions", "saviez", "savaient"]},
+                {es: "querer", fr: "vouloir", present: ["veux", "veux", "veut", "voulons", "voulez", "veulent"], passe: ["ai voulu", "as voulu", "a voulu", "avons voulu", "avez voulu", "ont voulu"], imparfait: ["voulais", "voulais", "voulait", "voulions", "vouliez", "voulaient"]},
+                {es: "venir", fr: "venir", present: ["viens", "viens", "vient", "venons", "venez", "viennent"], passe: ["suis venu", "es venu", "est venu", "sommes venus", "êtes venus", "sont venus"], imparfait: ["venais", "venais", "venait", "venions", "veniez", "venaient"]},
+                {es: "tomar", fr: "prendre", present: ["prends", "prends", "prend", "prenons", "prenez", "prennent"], passe: ["ai pris", "as pris", "a pris", "avons pris", "avez pris", "ont pris"], imparfait: ["prenais", "prenais", "prenait", "prenions", "preniez", "prenaient"]},
+                {es: "dar", fr: "donner", present: ["donne", "donnes", "donne", "donnons", "donnez", "donnent"], passe: ["ai donné", "as donné", "a donné", "avons donné", "avez donné", "ont donné"], imparfait: ["donnais", "donnais", "donnait", "donnions", "donniez", "donnaient"]},
+                {es: "encontrar", fr: "trouver", present: ["trouve", "trouves", "trouve", "trouvons", "trouvez", "trouvent"], passe: ["ai trouvé", "as trouvé", "a trouvé", "avons trouvé", "avez trouvé", "ont trouvé"], imparfait: ["trouvais", "trouvais", "trouvait", "trouvions", "trouviez", "trouvaient"]},
+                {es: "pensar", fr: "penser", present: ["pense", "penses", "pense", "pensons", "pensez", "pensent"], passe: ["ai pensé", "as pensé", "a pensé", "avons pensé", "avez pensé", "ont pensé"], imparfait: ["pensais", "pensais", "pensait", "pensions", "pensiez", "pensaient"]},
+                {es: "hablar", fr: "parler", present: ["parle", "parles", "parle", "parlons", "parlez", "parlent"], passe: ["ai parlé", "as parlé", "a parlé", "avons parlé", "avez parlé", "ont parlé"], imparfait: ["parlais", "parlais", "parlait", "parlions", "parliez", "parlaient"]},
+                {es: "pasar", fr: "passer", present: ["passe", "passes", "passe", "passons", "passez", "passent"], passe: ["ai passé", "as passé", "a passé", "avons passé", "avez passé", "ont passé"], imparfait: ["passais", "passais", "passait", "passions", "passiez", "passaient"]},
+                {es: "mirar", fr: "regarder", present: ["regarde", "regardes", "regarde", "regardons", "regardez", "regardent"], passe: ["ai regardé", "as regardé", "a regardé", "avons regardé", "avez regardé", "ont regardé"], imparfait: ["regardais", "regardais", "regardait", "regardions", "regardiez", "regardaient"]},
+                {es: "llamar", fr: "appeler", present: ["appelle", "appelles", "appelle", "appelons", "appelez", "appellent"], passe: ["ai appelé", "as appelé", "a appelé", "avons appelé", "avez appelé", "ont appelé"], imparfait: ["appelais", "appelais", "appelait", "appelions", "appeliez", "appelaient"]},
+                {es: "dejar", fr: "laisser", present: ["laisse", "laisses", "laisse", "laissons", "laissez", "laissent"], passe: ["ai laissé", "as laissé", "a laissé", "avons laissé", "avez laissé", "ont laissé"], imparfait: ["laissais", "laissais", "laissait", "laissions", "laissiez", "laissaient"]},
+                {es: "trabajar", fr: "travailler", present: ["travaille", "travailles", "travaille", "travaillons", "travaillez", "travaillent"], passe: ["ai travaillé", "as travaillé", "a travaillé", "avons travaillé", "avez travaillé", "ont travaillé"], imparfait: ["travaillais", "travaillais", "travaillait", "travaillions", "travailliez", "travaillaient"]},
+                {es: "vivir", fr: "vivre", present: ["vis", "vis", "vit", "vivons", "vivez", "vivent"], passe: ["ai vécu", "as vécu", "a vécu", "avons vécu", "avez vécu", "ont vécu"], imparfait: ["vivais", "vivais", "vivait", "vivions", "viviez", "vivaient"]},
+                {es: "escribir", fr: "écrire", present: ["écris", "écris", "écrit", "écrivons", "écrivez", "écrivent"], passe: ["ai écrit", "as écrit", "a écrit", "avons écrit", "avez écrit", "ont écrit"], imparfait: ["écrivais", "écrivais", "écrivait", "écrivions", "écriviez", "écrivaient"]},
+                {es: "leer", fr: "lire", present: ["lis", "lis", "lit", "lisons", "lisez", "lisent"], passe: ["ai lu", "as lu", "a lu", "avons lu", "avez lu", "ont lu"], imparfait: ["lisais", "lisais", "lisait", "lisions", "lisiez", "lisaient"]},
+                {es: "comer", fr: "manger", present: ["mange", "manges", "mange", "mangeons", "mangez", "mangent"], passe: ["ai mangé", "as mangé", "a mangé", "avons mangé", "avez mangé", "ont mangé"], imparfait: ["mangeais", "mangeais", "mangeait", "mangions", "mangiez", "mangeaient"]},
+                {es: "beber", fr: "boire", present: ["bois", "bois", "boit", "buvons", "buvez", "boivent"], passe: ["ai bu", "as bu", "a bu", "avons bu", "avez bu", "ont bu"], imparfait: ["buvais", "buvais", "buvait", "buvions", "buviez", "buvaient"]}
+            ],
             
-            switch(mode) {
-                case 'solo':
-                    setupSoloMode();
-                    break;
-                case 'memory':
-                    setupMemoryMode();
-                    break;
-                case 'timed':
-                    setupTimedMode();
-                    break;
-                case 'kahoot':
-                    setupKahootMode();
-                    break;
-            }
-        }
-
-        function setupSoloMode() {
-            const gameArea = document.getElementById('gameArea');
-            gameArea.innerHTML = `
-                <div class="settings">
-                    <div class="setting-group">
-                        <label>Selecciona el tiempo verbal:</label>
-                        <select id="tenseSelect">
-                            <option value="present">Présent d'indicatif</option>
-                            <option value="passe">Passé Composé</option>
-                            <option value="imparfait">Imparfait</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="soloScore">0</div>
-                        <div class="stat-label">Correctas</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="soloTotal">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                </div>
-                <div id="questionArea"></div>
-                <button class="btn-primary" onclick="nextQuestion()">Comenzar</button>
-            `;
-        }
-
-        function nextQuestion() {
-            const tense = document.getElementById('tenseSelect').value;
-            const verb = verbs[Math.floor(Math.random() * verbs.length)];
-            const pronounIndex = Math.floor(Math.random() * pronouns.length);
-            const pronoun = pronouns[pronounIndex];
-            const correctAnswer = verb[tense][pronounIndex];
+            pronouns: ["je", "tu", "il/elle", "nous", "vous", "ils/elles"],
+            tenseNames: {present: "Présent", passe: "Passé Composé", imparfait: "Imparfait"},
             
-            const wrongAnswers = [];
-            while(wrongAnswers.length < 3) {
-                const randomVerb = verbs[Math.floor(Math.random() * verbs.length)];
-                const wrongAnswer = randomVerb[tense][pronounIndex];
-                if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
-                    wrongAnswers.push(wrongAnswer);
+            currentMode: null,
+            score: 0,
+            questions: 0,
+            timer: null,
+            timeLeft: 0,
+            currentQuestion: null,
+            memoryCards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+
+            selectMode(mode) {
+                this.currentMode = mode;
+                this.score = 0;
+                this.questions = 0;
+                
+                const modeSelector = document.getElementById('modeSelector');
+                const gameArea = document.getElementById('gameArea');
+                
+                modeSelector.style.display = 'none';
+                gameArea.classList.add('active');
+                
+                switch(mode) {
+                    case 'solo':
+                        this.setupSoloMode();
+                        break;
+                    case 'memory':
+                        this.setupMemoryMode();
+                        break;
+                    case 'timed':
+                        this.setupTimedMode();
+                        break;
+                    case 'kahoot':
+                        this.setupKahootMode();
+                        break;
                 }
-            }
-            
-            const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
-            
-            currentQuestion = {verb, pronoun, correctAnswer, tense};
-            
-            const questionArea = document.getElementById('questionArea');
-            questionArea.innerHTML = `
-                <div class="question-card">
-                    <h2>${verb.fr} (${verb.es})</h2>
-                    <p>${tenseNames[tense]} - ${pronoun}</p>
-                </div>
-                <div class="answers-grid">
-                    ${allAnswers.map(answer => `
-                        <button class="answer-btn" onclick="checkAnswer('${answer}')">${answer}</button>
-                    `).join('')}
-                </div>
-            `;
-        }
+            },
 
-        function checkAnswer(answer) {
-            questions++;
-            const buttons = document.querySelectorAll('.answer-btn');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                if(btn.textContent === currentQuestion.correctAnswer) {
-                    btn.classList.add('correct');
+            backToMenu() {
+                if(this.timer) {
+                    clearInterval(this.timer);
+                    this.timer = null;
                 }
-                if(btn.textContent === answer && answer !== currentQuestion.correctAnswer) {
-                    btn.classList.add('incorrect');
-                }
-            });
-            
-            if(answer === currentQuestion.correctAnswer) {
-                score++;
-            }
-            
-            document.getElementById('soloScore').textContent = score;
-            document.getElementById('soloTotal').textContent = questions;
-            
-            setTimeout(() => nextQuestion(), 1500);
-        }
+                
+                const modeSelector = document.getElementById('modeSelector');
+                const gameArea = document.getElementById('gameArea');
+                
+                modeSelector.style.display = 'grid';
+                gameArea.classList.remove('active');
+                gameArea.innerHTML = '';
+            },
 
-        function setupMemoryMode() {
-            const gameArea = document.getElementById('gameArea');
-            const selectedVerbs = verbs.slice(0, 8);
-            memoryCards = [];
-            
-            selectedVerbs.forEach(verb => {
-                memoryCards.push({id: verb.fr, text: verb.fr, type: 'fr'});
-                memoryCards.push({id: verb.fr, text: verb.es, type: 'es'});
-            });
-            
-            memoryCards = memoryCards.sort(() => Math.random() - 0.5);
-            flippedCards = [];
-            matchedPairs = 0;
-            
-            gameArea.innerHTML = `
-                <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="memoryPairs">0 / 8</div>
-                        <div class="stat-label">Parejas</div>
-                    </div>
-                </div>
-                <div class="memory-grid" id="memoryGrid">
-                    ${memoryCards.map((card, index) => `
-                        <div class="memory-card" data-index="${index}" onclick="flipCard(${index})">
-                            ?
+            setupSoloMode() {
+                const gameArea = document.getElementById('gameArea');
+                gameArea.innerHTML = `
+                    <button class="btn-back" onclick="game.backToMenu()">← Volver al menú</button>
+                    <div class="settings">
+                        <div class="setting-group">
+                            <label>Selecciona el tiempo verbal:</label>
+                            <select id="tenseSelect">
+                                <option value="present">Présent d'indicatif</option>
+                                <option value="passe">Passé Composé</option>
+                                <option value="imparfait">Imparfait</option>
+                            </select>
                         </div>
-                    `).join('')}
-                </div>
-                <button class="btn-primary" onclick="setupMemoryMode()">Reiniciar</button>
-            `;
-        }
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="soloScore">0</div>
+                            <div class="stat-label">Correctas</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="soloTotal">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                    </div>
+                    <div id="questionArea"></div>
+                    <button class="btn-primary" onclick="game.nextQuestion()">Comenzar</button>
+                `;
+            },
 
-        function flipCard(index) {
-            if(flippedCards.length >= 2) return;
-            
-            const cardElement = document.querySelector(`[data-index="${index}"]`);
-            if(cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
-            
-            cardElement.classList.add('flipped');
-            cardElement.textContent = memoryCards[index].text;
-            flippedCards.push(index);
-            
-            if(flippedCards.length === 2) {
-                setTimeout(checkMemoryMatch, 1000);
-            }
-        }
-
-        function checkMemoryMatch() {
-            const [index1, index2] = flippedCards;
-            const card1 = memoryCards[index1];
-            const card2 = memoryCards[index2];
-            
-            const element1 = document.querySelector(`[data-index="${index1}"]`);
-            const element2 = document.querySelector(`[data-index="${index2}"]`);
-            
-            if(card1.id === card2.id && card1.type !== card2.type) {
-                element1.classList.add('matched');
-                element2.classList.add('matched');
-                matchedPairs++;
-                document.getElementById('memoryPairs').textContent = `${matchedPairs} / 8`;
+            nextQuestion() {
+                const tense = document.getElementById('tenseSelect').value;
+                const verb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                const pronounIndex = Math.floor(Math.random() * this.pronouns.length);
+                const pronoun = this.pronouns[pronounIndex];
+                const correctAnswer = verb[tense][pronounIndex];
                 
-                if(matchedPairs === 8) {
-                    setTimeout(() => {
-                        alert('¡Felicidades! ¡Has completado el Memory! 🎉');
-                    }, 500);
+                const wrongAnswers = [];
+                while(wrongAnswers.length < 3) {
+                    const randomVerb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                    const wrongAnswer = randomVerb[tense][pronounIndex];
+                    if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
+                        wrongAnswers.push(wrongAnswer);
+                    }
                 }
-            } else {
-                element1.classList.remove('flipped');
-                element2.classList.remove('flipped');
-                element1.textContent = '?';
-                element2.textContent = '?';
-            }
-            
-            flippedCards = [];
-        }
-
-        function setupTimedMode() {
-            const gameArea = document.getElementById('gameArea');
-            timeLeft = 60;
-            score = 0;
-            questions = 0;
-            
-            gameArea.innerHTML = `
-                <div class="settings">
-                    <div class="setting-group">
-                        <label>Selecciona el tiempo verbal:</label>
-                        <select id="timedTenseSelect">
-                            <option value="present">Présent d'indicatif</option>
-                            <option value="passe">Passé Composé</option>
-                            <option value="imparfait">Imparfait</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="timer" id="timer">60</div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="timedScore">0</div>
-                        <div class="stat-label">Correctas</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="timedTotal">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                </div>
-                <div id="timedQuestionArea"></div>
-                <button class="btn-primary" onclick="startTimedGame()">Comenzar</button>
-            `;
-        }
-
-        function startTimedGame() {
-            timer = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').textContent = timeLeft;
                 
-                if(timeLeft <= 0) {
-                    clearInterval(timer);
-                    endTimedGame();
-                }
-            }, 1000);
-            
-            nextTimedQuestion();
-        }
-
-        function nextTimedQuestion() {
-            if(timeLeft <= 0) return;
-            
-            const tense = document.getElementById('timedTenseSelect').value;
-            const verb = verbs[Math.floor(Math.random() * verbs.length)];
-            const pronounIndex = Math.floor(Math.random() * pronouns.length);
-            const pronoun = pronouns[pronounIndex];
-            const correctAnswer = verb[tense][pronounIndex];
-            
-            const wrongAnswers = [];
-            while(wrongAnswers.length < 3) {
-                const randomVerb = verbs[Math.floor(Math.random() * verbs.length)];
-                const wrongAnswer = randomVerb[tense][pronounIndex];
-                if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
-                    wrongAnswers.push(wrongAnswer);
-                }
-            }
-            
-            const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
-            currentQuestion = {verb, pronoun, correctAnswer, tense};
-            
-            const questionArea = document.getElementById('timedQuestionArea');
-            questionArea.innerHTML = `
-                <div class="question-card">
-                    <h2>${verb.fr} (${verb.es})</h2>
-                    <p>${tenseNames[tense]} - ${pronoun}</p>
-                </div>
-                <div class="answers-grid">
-                    ${allAnswers.map(answer => `
-                        <button class="answer-btn" onclick="checkTimedAnswer('${answer}')">${answer}</button>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function checkTimedAnswer(answer) {
-            questions++;
-            if(answer === currentQuestion.correctAnswer) {
-                score++;
-            }
-            
-            document.getElementById('timedScore').textContent = score;
-            document.getElementById('timedTotal').textContent = questions;
-            
-            nextTimedQuestion();
-        }
-
-        function endTimedGame() {
-            const percentage = questions > 0 ? Math.round((score / questions) * 100) : 0;
-            document.getElementById('timedQuestionArea').innerHTML = `
-                <div class="leaderboard">
-                    <h2 style="text-align: center; color: #667eea; margin-bottom: 20px;">¡Tiempo agotado!</h2>
-                    <div class="leaderboard-item">
-                        <span>Respuestas correctas:</span>
-                        <span>${score} / ${questions}</span>
-                    </div>
-                    <div class="leaderboard-item">
-                        <span>Porcentaje de acierto:</span>
-                        <span>${percentage}%</span>
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="setupTimedMode()">Jugar de nuevo</button>
-            `;
-        }
-
-        function setupKahootMode() {
-            const gameArea = document.getElementById('gameArea');
-            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            gameArea.innerHTML = `
-                <div class="kahoot-room">
-                    <h3 style="text-align: center; margin-bottom: 10px;">Código de sala:</h3>
-                    <div class="room-code">${roomCode}</div>
-                    <p style="text-align: center; margin-top: 10px; color: #666;">
-                        Comparte este código con tus amigos
-                    </p>
-                </div>
+                const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
                 
-                <div class="settings">
-                    <div class="setting-group">
-                        <label>Tu nombre:</label>
-                        <input type="text" id="playerName" placeholder="Escribe tu
+                this.currentQuestion = {verb, pronoun, correctAnswer, tense};
+                
+                const questionArea = document.getElementById('questionArea');
+                questionArea.innerHTML = `
+                    <div class="question-card">
+                        <h2>${verb.fr} (${verb.es})</h2>
+                        <p>${this.tenseNames[tense]} - ${pronoun}</p>
+                    </div>
+                    <div class="answers-grid">
+                        ${allAnswers.map(answer => `
+                            <button class="answer-btn" onclick="game.checkAnswer('${answer.replace(/'/g, "\\'")}')">
+                                ${answer}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            checkAnswer(answer) {
+                this.questions++;
+                const buttons = document.querySelectorAll('.answer-btn');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if(btn.textContent.trim() === this.currentQuestion.correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                    if(btn.textContent.trim() === answer && answer !== this.currentQuestion.correctAnswer) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+                
+                if(answer === this.currentQuestion.correctAnswer) {
+                    this.score++;
+                }
+                
+                document.getElementById('soloScore').textContent = this.score;
+                document.getElementById('soloTotal').textContent = this.questions;
+                
+                setTimeout(() => this.nextQuestion(), 1500);
+            },
+
+            setupMemoryMode() {
+                const gameArea = document.getElementById('gameArea');
+                const selectedVerbs = this.verbs.slice(0, 8);
+                this.memoryCards = [];
+                
+                selectedVerbs.forEach(verb => {
+                    this.memoryCards.push({id: verb.fr, text: verb.fr, type: 'fr'});
+                    this.memoryCards.push({id: verb.fr, text: verb.es, type: 'es'});
+                });
+                
+                this.memoryCards = this.memoryCards.sort(() => Math.random() - 0.5);
+                this.flippedCards = [];
+                this.matchedPairs = 0;
+                
+                gameArea.innerHTML = `
+                    <button class="btn-back" onclick="game.backToMenu()">← Volver al menú</button>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="memoryPairs">0 / 8</div>
+                            <div class="stat-label">Parejas</div>
+                        </div>
+                    </div>
+                    <div class="memory-grid" id="memoryGrid">
+                        ${this.memoryCards.map((card, index) => `
+                            <div class="memory-card" data-index="${index}" onclick="game.flipCard(${index})">
+                                ?
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn-primary" onclick="game.setupMemoryMode()">Reiniciar</button>
+                `;
+            },
+
+            flipCard(index) {
+                if(this.flippedCards.length >= 2) return;
+                
+                const cardElement = document.querySelector(`[data-index="${index}"]`);
+                if(cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
+                
+                cardElement.classList.add('flipped');
+                cardElement.textContent = this.memoryCards[index].text;
+                this.flippedCards.push(index);
+                
+                if(this.flippedCards.length === 2) {
+                    setTimeout(() => this.checkMemoryMatch(), 1000);
+                }
+            },
+
+            checkMemoryMatch() {
+                const [index1, index2] = this.flippedCards;
+                const card1 = this.memoryCards[index1];
+                const card2 = this.memoryCards[index2];
+                
+                const element1 = document.querySelector(`[data-index="${index1}"]`);
+                const element2 = document.querySelector(`[data-index="${index2}"]`);
+                
+                if(card1.id === card2.id && card1.type !== card2.type) {
+                    element1.classList.add('matched');
+                    element2.classList.add('matched');
+                    this.matchedPairs++;
+                    document.getElementById('memoryPairs').textContent = `${this.matchedPairs} / 8`;
+                    
+                    if(this.matchedPairs === 8) {
+                        setTimeout(() => {
+                            alert('¡Felicidades! ¡Has completado el Memory! 🎉');
+                        }, 500);
+                    }
+                } else {
+                    element1.classList.remove('flipped');
+                    element2.classList.remove('flipped');
+                    element1.textContent = '?';
+                    element2.textContent = '?';
+                }
+                
+                this.flippedCards = [];
+            },
+
+            setupTimedMode() {
+                const gameArea = document.getElementById('gameArea');
+                this.timeLeft = 60;
+                this.score = 0;
+                this.questions = 0;
+                
+                gameArea.innerHTML = `
+                    <button class="btn-back" onclick="game.backToMenu()">← Volver al menú</button>
+                    <div class="settings">
+                        <div class="setting-group">
+                            <label>Selecciona el tiempo verbal:</label>
+                            <select id="timedTenseSelect">
+                                <option value="present">Présent d'indicatif</option>
+                                <option value="passe">Passé Composé</option>
+                                <option value="imparfait">Imparfait</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="timer" id="timer">60</div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="timedScore">0</div>
+                            <div class="stat-label">Correctas</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="timedTotal">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                    </div>
+                    <div id="timedQuestionArea"></div>
+                    <button class="btn-primary" onclick="game.startTimedGame()">Comenzar</button>
+                `;
+            },
+
+            startTimedGame() {
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    document.getElementById('timer').textContent = this.timeLeft;
+                    
+                    if(this.timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.endTimedGame();
+                    }
+                }, 1000);
+                
+                this.nextTimedQuestion();
+            },
+
+            nextTimedQuestion() {
+                if(this.timeLeft <= 0) return;
+                
+                const tense = document.getElementById('timedTenseSelect').value;
+                const verb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                const pronounIndex = Math.floor(Math.random() * this.pronouns.length);
+                const pronoun = this.pronouns[pronounIndex];
+                const correctAnswer = verb[tense][pronounIndex];
+                
+                const wrongAnswers = [];
+                while(wrongAnswers.length < 3) {
+                    const randomVerb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                    const wrongAnswer = randomVerb[tense][pronounIndex];
+                    if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
+                        wrongAnswers.push(wrongAnswer);
+                    }
+                }
+                
+                const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+                this.currentQuestion = {verb, pronoun, correctAnswer, tense};
+                
+                const questionArea = document.getElementById('timedQuestionArea');
+                questionArea.innerHTML = `
+                    <div class="question-card">
+                        <h2>${verb.fr} (${verb.es})</h2>
+                        <p>${this.tenseNames[tense]} - ${pronoun}</p>
+                    </div>
+                    <div class="answers-grid">
+                        ${allAnswers.map(answer => `
+                            <button class="answer-btn" onclick="game.checkTimedAnswer('${answer.replace(/'/g, "\\'")}')">
+                                ${answer}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            checkTimedAnswer(answer) {
+                this.questions++;
+                if(answer === this.currentQuestion.correctAnswer) {
+                    this.score++;
+                }
+                
+                document.getElementById('timedScore').textContent = this.score;
+                document.getElementById('timedTotal').textContent = this.questions;
+                
+                this.nextTimedQuestion();
+            },
+
+            endTimedGame() {
+                const percentage = this.questions > 0 ? Math.round((this.score / this.questions) * 100) : 0;
+                document.getElementById('timedQuestionArea').innerHTML = `
+                    <div class="leaderboard">
+                        <h2 style="text-align: center; color: #667eea; margin-bottom: 20px;">¡Tiempo agotado!</h2>
+                        <div class="leaderboard-item">
+                            <span>Respuestas correctas:</span>
+                            <span>${this.score} / ${this.questions}</span>
+                        </div>
+                        <div class="leaderboard-item">
+                            <span>Porcentaje de acierto:</span>
+                            <span>${percentage}%</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="game.setupTimedMode()">Jugar de nuevo</button>
+                `;
+            },
+
+            setupKahootMode() {
+                const gameArea = document.getElementById('gameArea');
+                const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                gameArea.innerHTML = `
+                    <button class="btn-back" onclick="game.backToMenu()">← Volver al menú</button>
+                    <div class="kahoot-room">
+                        <h3 style="text-align: center; margin-bottom: 10px;">Código de sala:</h3>
+                        <div class="room-code">${roomCode}</div>
+                        <p style="text-align: center; margin-top: 10px; color: #666;">
+                            Comparte este código con tus amigos
+                        </p>
+                    </div>
+                    
+                    <div class="settings">
+                        <div class="setting-group">
+                            <label>Tu nombre:</label>
+                            <input type="text" id="playerName" placeholder="Escribe tu nombre">
+                        </div>
+                        <div class="setting-group">
+                            <label>Selecciona el tiempo verbal:</label>
+                            <select id="kahootTenseSelect">
+                                <option value="present">Présent d'indicatif</option>
+                                <option value="passe">Passé Composé</option>
+                                <option value="imparfait">Imparfait</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="kahootScore">0</div>
+                            <div class="stat-label">Tu puntuación</div>
+                        </div>
+                    </div>
+                    
+                    <div id="kahootQuestionArea"></div>
+                    <button class="btn-primary" onclick="game.startKahootGame()">Iniciar partida</button>
+                `;
+            },
+
+            startKahootGame() {
+                const playerName = document.getElementById('playerName').value || 'Jugador';
+                this.score = 0;
+                this.questions = 0;
+                this.nextKahootQuestion();
+            },
+
+            nextKahootQuestion() {
+                const tense = document.getElementById('kahootTenseSelect').value;
+                const verb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                const pronounIndex = Math.floor(Math.random() * this.pronouns.length);
+                const pronoun = this.pronouns[pronounIndex];
+                const correctAnswer = verb[tense][pronounIndex];
+                
+                const wrongAnswers = [];
+                while(wrongAnswers.length < 3) {
+                    const randomVerb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                    const wrongAnswer = randomVerb[tense][pronounIndex];
+                    if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
+                        wrongAnswers.push(wrongAnswer);
+                    }
+                }
+                
+                const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+                this.currentQuestion = {verb, pronoun, correctAnswer, tense};
+                
+                const questionArea = document.getElementById('kahootQuestionArea');
+                questionArea.innerHTML = `
+                    <div class="question-card">
+                        <h2>${verb.fr} (${verb.es})</h2>
+                        <p>${this.tenseNames[tense]} - ${pronoun}</p>
+                    </div>
+                    <div class="answers-grid">
+                        ${allAnswers.map(answer => `
+                            <button class="answer-btn" onclick="game.checkKahootAnswer('${answer.replace(/'/g, "\\'")}')">
+                                ${answer}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            checkKahootAnswer(answer) {
+                this.questions++;
+                const buttons = document.querySelectorAll('.answer-btn');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if(btn.textContent.trim() === this.currentQuestion.correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                    if(btn.textContent.trim() === answer && answer !== this.currentQuestion.correctAnswer) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+                
+                if(answer === this.currentQuestion.correctAnswer) {
+                    this.score += 100;
+                }
+                
+                document.getElementById('kahootScore').textContent = this.score;
+                
+                if(this.questions >= 10) {
+                    setTimeout(() => this.endKahootGame(), 1500);
+                } else {
+                    setTimeout(() => this.nextKahootQuestion(), 1500);
+                }
+            },
+
+            endKahootGame() {
+                const playerName = document.getElementById('playerName').value || 'Jugador';
+                const percentage = this.questions > 0 ? Math.round(((this.score / 100) / this.questions) * 100) : 0;
+                
+                document.getElementById('kahootQuestionArea').innerHTML = `
+                    <div class="leaderboard">
+                        <h2 style="text-align: center; color: #667eea; margin-bottom: 20px;">🏆 Resultados finales</h2>
+                        <div class="leaderboard-item">
+                            <span>🥇 ${playerName}</span>
+                            <span>${this.score} pts</span>
+                        </div>
+                        <div class="leaderboard-item">
+                            <span>Respuestas correctas:</span>
+                            <span>${this.score / 100} / ${this.questions}</span>
+                        </div>
+                        <div class="leaderboard-item">
+                            <span>Porcentaje de acierto:</span>
+                            <span>${percentage}%</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="game.setupKahootMode()">Nueva partida</button>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
