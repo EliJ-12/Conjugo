@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conju-Go - Aprende Francés Jugando</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .game-area {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .question-card h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .question-card p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .answer-btn {
+            background: white;
+            border: 3px solid #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #333;
+        }
+
+        .answer-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .answer-btn.correct {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        .answer-btn.incorrect {
+            background: #f44336;
+            border-color: #f44336;
+            color: white;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: white;
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .memory-card.flipped {
+            background: white;
+            border: 3px solid #667eea;
+            color: #333;
+        }
+
+        .memory-card.matched {
+            background: #4CAF50;
+            color: white;
+            cursor: default;
+        }
+
+        .memory-card:hover:not(.matched) {
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .timer {
+            font-size: 3em;
+            font-weight: bold;
+            color: #f5576c;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .kahoot-room {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ffc107;
+        }
+
+        .room-code {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+
+        .players-list {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .player-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .leaderboard {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        .medal {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .memory-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇫🇷 Conju-Go</h1>
+        <p class="subtitle">Aprende francés jugando - 150 verbos esenciales</p>
+
+        <div class="mode-selector" id="modeSelector">
+            <button class="mode-btn" onclick="selectMode('solo')">
+                🎯 Modo Solitario
+            </button>
+            <button class="mode-btn" onclick="selectMode('memory')">
+                🧠 Memory
+            </button>
+            <button class="mode-btn" onclick="selectMode('timed')">
+                ⏱️ Contrarreloj
+            </button>
+            <button class="mode-btn" onclick="selectMode('kahoot')">
+                👥 Modo Kahoot
+            </button>
+        </div>
+
+        <div class="game-area" id="gameArea"></div>
+    </div>
+
+    <script>
+        const verbs = [
+            {es: "ser/estar", fr: "être", present: ["suis", "es", "est", "sommes", "êtes", "sont"], passe: ["été", "été", "été", "été", "été", "été"], imparfait: ["étais", "étais", "était", "étions", "étiez", "étaient"]},
+            {es: "tener", fr: "avoir", present: ["ai", "as", "a", "avons", "avez", "ont"], passe: ["eu", "eu", "eu", "eu", "eu", "eu"], imparfait: ["avais", "avais", "avait", "avions", "aviez", "avaient"]},
+            {es: "hacer", fr: "faire", present: ["fais", "fais", "fait", "faisons", "faites", "font"], passe: ["fait", "fait", "fait", "fait", "fait", "fait"], imparfait: ["faisais", "faisais", "faisait", "faisions", "faisiez", "faisaient"]},
+            {es: "poder", fr: "pouvoir", present: ["peux", "peux", "peut", "pouvons", "pouvez", "peuvent"], passe: ["pu", "pu", "pu", "pu", "pu", "pu"], imparfait: ["pouvais", "pouvais", "pouvait", "pouvions", "pouviez", "pouvaient"]},
+            {es: "decir", fr: "dire", present: ["dis", "dis", "dit", "disons", "dites", "disent"], passe: ["dit", "dit", "dit", "dit", "dit", "dit"], imparfait: ["disais", "disais", "disait", "disions", "disiez", "disaient"]},
+            {es: "ir", fr: "aller", present: ["vais", "vas", "va", "allons", "allez", "vont"], passe: ["allé", "allé", "allé", "allé", "allé", "allé"], imparfait: ["allais", "allais", "allait", "allions", "alliez", "allaient"]},
+            {es: "ver", fr: "voir", present: ["vois", "vois", "voit", "voyons", "voyez", "voient"], passe: ["vu", "vu", "vu", "vu", "vu", "vu"], imparfait: ["voyais", "voyais", "voyait", "voyions", "voyiez", "voyaient"]},
+            {es: "saber", fr: "savoir", present: ["sais", "sais", "sait", "savons", "savez", "savent"], passe: ["su", "su", "su", "su", "su", "su"], imparfait: ["savais", "savais", "savait", "savions", "saviez", "savaient"]},
+            {es: "querer", fr: "vouloir", present: ["veux", "veux", "veut", "voulons", "voulez", "veulent"], passe: ["voulu", "voulu", "voulu", "voulu", "voulu", "voulu"], imparfait: ["voulais", "voulais", "voulait", "voulions", "vouliez", "voulaient"]},
+            {es: "venir", fr: "venir", present: ["viens", "viens", "vient", "venons", "venez", "viennent"], passe: ["venu", "venu", "venu", "venu", "venu", "venu"], imparfait: ["venais", "venais", "venait", "venions", "veniez", "venaient"]},
+            {es: "tomar", fr: "prendre", present: ["prends", "prends", "prend", "prenons", "prenez", "prennent"], passe: ["pris", "pris", "pris", "pris", "pris", "pris"], imparfait: ["prenais", "prenais", "prenait", "prenions", "preniez", "prenaient"]},
+            {es: "dar", fr: "donner", present: ["donne", "donnes", "donne", "donnons", "donnez", "donnent"], passe: ["donné", "donné", "donné", "donné", "donné", "donné"], imparfait: ["donnais", "donnais", "donnait", "donnions", "donniez", "donnaient"]},
+            {es: "encontrar", fr: "trouver", present: ["trouve", "trouves", "trouve", "trouvons", "trouvez", "trouvent"], passe: ["trouvé", "trouvé", "trouvé", "trouvé", "trouvé", "trouvé"], imparfait: ["trouvais", "trouvais", "trouvait", "trouvions", "trouviez", "trouvaient"]},
+            {es: "pensar", fr: "penser", present: ["pense", "penses", "pense", "pensons", "pensez", "pensent"], passe: ["pensé", "pensé", "pensé", "pensé", "pensé", "pensé"], imparfait: ["pensais", "pensais", "pensait", "pensions", "pensiez", "pensaient"]},
+            {es: "hablar", fr: "parler", present: ["parle", "parles", "parle", "parlons", "parlez", "parlent"], passe: ["parlé", "parlé", "parlé", "parlé", "parlé", "parlé"], imparfait: ["parlais", "parlais", "parlait", "parlions", "parliez", "parlaient"]},
+            {es: "pasar", fr: "passer", present: ["passe", "passes", "passe", "passons", "passez", "passent"], passe: ["passé", "passé", "passé", "passé", "passé", "passé"], imparfait: ["passais", "passais", "passait", "passions", "passiez", "passaient"]},
+            {es: "mirar", fr: "regarder", present: ["regarde", "regardes", "regarde", "regardons", "regardez", "regardent"], passe: ["regardé", "regardé", "regardé", "regardé", "regardé", "regardé"], imparfait: ["regardais", "regardais", "regardait", "regardions", "regardiez", "regardaient"]},
+            {es: "llamar", fr: "appeler", present: ["appelle", "appelles", "appelle", "appelons", "appelez", "appellent"], passe: ["appelé", "appelé", "appelé", "appelé", "appelé", "appelé"], imparfait: ["appelais", "appelais", "appelait", "appelions", "appeliez", "appelaient"]},
+            {es: "dejar", fr: "laisser", present: ["laisse", "laisses", "laisse", "laissons", "laissez", "laissent"], passe: ["laissé", "laissé", "laissé", "laissé", "laissé", "laissé"], imparfait: ["laissais", "laissais", "laissait", "laissions", "laissiez", "laissaient"]},
+            {es: "trabajar", fr: "travailler", present: ["travaille", "travailles", "travaille", "travaillons", "travaillez", "travaillent"], passe: ["travaillé", "travaillé", "travaillé", "travaillé", "travaillé", "travaillé"], imparfait: ["travaillais", "travaillais", "travaillait", "travaillions", "travailliez", "travaillaient"]}
+        ];
+
+        const pronouns = ["je", "tu", "il/elle", "nous", "vous", "ils/elles"];
+        const tenseNames = {present: "Présent", passe: "Passé Composé", imparfait: "Imparfait"};
+        
+        let currentMode = null;
+        let score = 0;
+        let questions = 0;
+        let timer = null;
+        let timeLeft = 0;
+        let currentQuestion = null;
+        let memoryCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+
+        function selectMode(mode) {
+            currentMode = mode;
+            score = 0;
+            questions = 0;
+            const gameArea = document.getElementById('gameArea');
+            gameArea.style.display = 'block';
+            
+            switch(mode) {
+                case 'solo':
+                    setupSoloMode();
+                    break;
+                case 'memory':
+                    setupMemoryMode();
+                    break;
+                case 'timed':
+                    setupTimedMode();
+                    break;
+                case 'kahoot':
+                    setupKahootMode();
+                    break;
+            }
+        }
+
+        function setupSoloMode() {
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = `
+                <div class="settings">
+                    <div class="setting-group">
+                        <label>Selecciona el tiempo verbal:</label>
+                        <select id="tenseSelect">
+                            <option value="present">Présent d'indicatif</option>
+                            <option value="passe">Passé Composé</option>
+                            <option value="imparfait">Imparfait</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="soloScore">0</div>
+                        <div class="stat-label">Correctas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="soloTotal">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+                <div id="questionArea"></div>
+                <button class="btn-primary" onclick="nextQuestion()">Comenzar</button>
+            `;
+        }
+
+        function nextQuestion() {
+            const tense = document.getElementById('tenseSelect').value;
+            const verb = verbs[Math.floor(Math.random() * verbs.length)];
+            const pronounIndex = Math.floor(Math.random() * pronouns.length);
+            const pronoun = pronouns[pronounIndex];
+            const correctAnswer = verb[tense][pronounIndex];
+            
+            const wrongAnswers = [];
+            while(wrongAnswers.length < 3) {
+                const randomVerb = verbs[Math.floor(Math.random() * verbs.length)];
+                const wrongAnswer = randomVerb[tense][pronounIndex];
+                if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
+                    wrongAnswers.push(wrongAnswer);
+                }
+            }
+            
+            const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+            
+            currentQuestion = {verb, pronoun, correctAnswer, tense};
+            
+            const questionArea = document.getElementById('questionArea');
+            questionArea.innerHTML = `
+                <div class="question-card">
+                    <h2>${verb.fr} (${verb.es})</h2>
+                    <p>${tenseNames[tense]} - ${pronoun}</p>
+                </div>
+                <div class="answers-grid">
+                    ${allAnswers.map(answer => `
+                        <button class="answer-btn" onclick="checkAnswer('${answer}')">${answer}</button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function checkAnswer(answer) {
+            questions++;
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if(btn.textContent === currentQuestion.correctAnswer) {
+                    btn.classList.add('correct');
+                }
+                if(btn.textContent === answer && answer !== currentQuestion.correctAnswer) {
+                    btn.classList.add('incorrect');
+                }
+            });
+            
+            if(answer === currentQuestion.correctAnswer) {
+                score++;
+            }
+            
+            document.getElementById('soloScore').textContent = score;
+            document.getElementById('soloTotal').textContent = questions;
+            
+            setTimeout(() => nextQuestion(), 1500);
+        }
+
+        function setupMemoryMode() {
+            const gameArea = document.getElementById('gameArea');
+            const selectedVerbs = verbs.slice(0, 8);
+            memoryCards = [];
+            
+            selectedVerbs.forEach(verb => {
+                memoryCards.push({id: verb.fr, text: verb.fr, type: 'fr'});
+                memoryCards.push({id: verb.fr, text: verb.es, type: 'es'});
+            });
+            
+            memoryCards = memoryCards.sort(() => Math.random() - 0.5);
+            flippedCards = [];
+            matchedPairs = 0;
+            
+            gameArea.innerHTML = `
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="memoryPairs">0 / 8</div>
+                        <div class="stat-label">Parejas</div>
+                    </div>
+                </div>
+                <div class="memory-grid" id="memoryGrid">
+                    ${memoryCards.map((card, index) => `
+                        <div class="memory-card" data-index="${index}" onclick="flipCard(${index})">
+                            ?
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn-primary" onclick="setupMemoryMode()">Reiniciar</button>
+            `;
+        }
+
+        function flipCard(index) {
+            if(flippedCards.length >= 2) return;
+            
+            const cardElement = document.querySelector(`[data-index="${index}"]`);
+            if(cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
+            
+            cardElement.classList.add('flipped');
+            cardElement.textContent = memoryCards[index].text;
+            flippedCards.push(index);
+            
+            if(flippedCards.length === 2) {
+                setTimeout(checkMemoryMatch, 1000);
+            }
+        }
+
+        function checkMemoryMatch() {
+            const [index1, index2] = flippedCards;
+            const card1 = memoryCards[index1];
+            const card2 = memoryCards[index2];
+            
+            const element1 = document.querySelector(`[data-index="${index1}"]`);
+            const element2 = document.querySelector(`[data-index="${index2}"]`);
+            
+            if(card1.id === card2.id && card1.type !== card2.type) {
+                element1.classList.add('matched');
+                element2.classList.add('matched');
+                matchedPairs++;
+                document.getElementById('memoryPairs').textContent = `${matchedPairs} / 8`;
+                
+                if(matchedPairs === 8) {
+                    setTimeout(() => {
+                        alert('¡Felicidades! ¡Has completado el Memory! 🎉');
+                    }, 500);
+                }
+            } else {
+                element1.classList.remove('flipped');
+                element2.classList.remove('flipped');
+                element1.textContent = '?';
+                element2.textContent = '?';
+            }
+            
+            flippedCards = [];
+        }
+
+        function setupTimedMode() {
+            const gameArea = document.getElementById('gameArea');
+            timeLeft = 60;
+            score = 0;
+            questions = 0;
+            
+            gameArea.innerHTML = `
+                <div class="settings">
+                    <div class="setting-group">
+                        <label>Selecciona el tiempo verbal:</label>
+                        <select id="timedTenseSelect">
+                            <option value="present">Présent d'indicatif</option>
+                            <option value="passe">Passé Composé</option>
+                            <option value="imparfait">Imparfait</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="timer" id="timer">60</div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="timedScore">0</div>
+                        <div class="stat-label">Correctas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="timedTotal">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+                <div id="timedQuestionArea"></div>
+                <button class="btn-primary" onclick="startTimedGame()">Comenzar</button>
+            `;
+        }
+
+        function startTimedGame() {
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if(timeLeft <= 0) {
+                    clearInterval(timer);
+                    endTimedGame();
+                }
+            }, 1000);
+            
+            nextTimedQuestion();
+        }
+
+        function nextTimedQuestion() {
+            if(timeLeft <= 0) return;
+            
+            const tense = document.getElementById('timedTenseSelect').value;
+            const verb = verbs[Math.floor(Math.random() * verbs.length)];
+            const pronounIndex = Math.floor(Math.random() * pronouns.length);
+            const pronoun = pronouns[pronounIndex];
+            const correctAnswer = verb[tense][pronounIndex];
+            
+            const wrongAnswers = [];
+            while(wrongAnswers.length < 3) {
+                const randomVerb = verbs[Math.floor(Math.random() * verbs.length)];
+                const wrongAnswer = randomVerb[tense][pronounIndex];
+                if(wrongAnswer !== correctAnswer && !wrongAnswers.includes(wrongAnswer)) {
+                    wrongAnswers.push(wrongAnswer);
+                }
+            }
+            
+            const allAnswers = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+            currentQuestion = {verb, pronoun, correctAnswer, tense};
+            
+            const questionArea = document.getElementById('timedQuestionArea');
+            questionArea.innerHTML = `
+                <div class="question-card">
+                    <h2>${verb.fr} (${verb.es})</h2>
+                    <p>${tenseNames[tense]} - ${pronoun}</p>
+                </div>
+                <div class="answers-grid">
+                    ${allAnswers.map(answer => `
+                        <button class="answer-btn" onclick="checkTimedAnswer('${answer}')">${answer}</button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function checkTimedAnswer(answer) {
+            questions++;
+            if(answer === currentQuestion.correctAnswer) {
+                score++;
+            }
+            
+            document.getElementById('timedScore').textContent = score;
+            document.getElementById('timedTotal').textContent = questions;
+            
+            nextTimedQuestion();
+        }
+
+        function endTimedGame() {
+            const percentage = questions > 0 ? Math.round((score / questions) * 100) : 0;
+            document.getElementById('timedQuestionArea').innerHTML = `
+                <div class="leaderboard">
+                    <h2 style="text-align: center; color: #667eea; margin-bottom: 20px;">¡Tiempo agotado!</h2>
+                    <div class="leaderboard-item">
+                        <span>Respuestas correctas:</span>
+                        <span>${score} / ${questions}</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <span>Porcentaje de acierto:</span>
+                        <span>${percentage}%</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="setupTimedMode()">Jugar de nuevo</button>
+            `;
+        }
+
+        function setupKahootMode() {
+            const gameArea = document.getElementById('gameArea');
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            gameArea.innerHTML = `
+                <div class="kahoot-room">
+                    <h3 style="text-align: center; margin-bottom: 10px;">Código de sala:</h3>
+                    <div class="room-code">${roomCode}</div>
+                    <p style="text-align: center; margin-top: 10px; color: #666;">
+                        Comparte este código con tus amigos
+                    </p>
+                </div>
+                
+                <div class="settings">
+                    <div class="setting-group">
+                        <label>Tu nombre:</label>
+                        <input type="text" id="playerName" placeholder="Escribe tu
